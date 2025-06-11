@@ -162,147 +162,44 @@ def stop_playback():
 # Initialize GUI
 root = tk.Tk()
 root.title("SM Player")
-root.geometry("900x600")
-root.minsize(600, 400)
+root.geometry("800x480")  # 크기를 실제 AVN 화면 크기로 조정
 
-# 배경 이미지 처리
-try:
-    # 배경 이미지 로드
-    bg_image = Image.open("./avn.jpg")
+# 배경 이미지 추가
+background_image = Image.open("./avn.jpg")
+background_image = background_image.resize((800, 480), Image.Resampling.LANCZOS)
+background_photo = ImageTk.PhotoImage(background_image)
 
-    # 창 크기 변경 시 배경 이미지 크기 조정 함수
-    def resize_background(event=None):
-        global bg_photo
-        # 현재 창 크기에 맞춰 이미지 크기 조정
-        resized_image = bg_image.resize((event.width, event.height), Image.Resampling.LANCZOS)
-        bg_photo = ImageTk.PhotoImage(resized_image)
-        bg_label.configure(image=bg_photo)
-        bg_label.image = bg_photo
+background_label = tk.Label(root, image=background_photo)
+background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-    # 배경 이미지 레이블
-    bg_label = tk.Label(root)
-    bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+# 현재 파일 재생 상태 표시
+current_file_label = tk.Label(root, text="재생 중인 파일 없음", font=("Helvetica", 14), fg="white", bg="black")
+current_file_label.place(x=50, y=30)  # AVN 화면 위쪽에 표시
 
-    # 초기 배경 이미지 설정
-    initial_bg = bg_image.resize((900, 600), Image.Resampling.LANCZOS)
-    bg_photo = ImageTk.PhotoImage(initial_bg)
-    bg_label.configure(image=bg_photo)
-
-    # 창 크기 변경 이벤트 바인딩
-    root.bind('<Configure>', resize_background)
-
-    has_background = True
-except:
-    has_background = False
-    root.configure(bg='#1e1e1e')
-
-# 메인 컨테이너 프레임 (반투명 배경)
-main_frame = tk.Frame(root, bg='#1e1e1e' if not has_background else '#000000')
-if has_background:
-    main_frame.configure(bg='black')
-    # 프레임을 약간 투명하게 만들기 위해 배경색 설정
-    main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-else:
-    main_frame.pack(fill=tk.BOTH, expand=True)
-
-# 상단 헤더 프레임 (반투명)
-header_frame = tk.Frame(main_frame, bg='#2d2d2d', height=80)
-header_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
-header_frame.pack_propagate(False)
-if has_background:
-    header_frame.configure(bg='#000000', highlightbackground='#00ff00', highlightthickness=1)
-
-# 타이틀
-title_label = tk.Label(header_frame, text="SM Music Player", font=("Helvetica", 24, "bold"),
-                      fg="#00ff00", bg='#000000' if has_background else '#2d2d2d')
-title_label.pack(pady=20)
-
-# 현재 재생 상태 표시 프레임
-status_frame = tk.Frame(main_frame, bg='#2d2d2d', height=60)
-status_frame.pack(fill=tk.X, padx=10, pady=5)
-status_frame.pack_propagate(False)
-if has_background:
-    status_frame.configure(bg='#000000', highlightbackground='#00ff00', highlightthickness=1)
-
-current_file_label = tk.Label(status_frame, text="재생 중인 파일 없음", font=("Helvetica", 14),
-                             fg="#00ff00", bg='#000000' if has_background else '#2d2d2d')
-current_file_label.pack(pady=15)
-
-# 진행률 표시 프레임
-progress_frame = tk.Frame(main_frame, bg='#000000' if has_background else '#1e1e1e')
-progress_frame.pack(fill=tk.X, padx=20, pady=10)
-
+# Progressbar 추가 (재생 진행 상태)
 progress_var = tk.DoubleVar()
-style = ttk.Style()
-style.theme_use('clam')
-style.configure("TProgressbar",
-                background='#00ff00',
-                troughcolor='#2d2d2d',
-                bordercolor='#1e1e1e',
-                lightcolor='#00ff00',
-                darkcolor='#00ff00')
+progress_bar = ttk.Progressbar(root, variable=progress_var, maximum=100)
+progress_bar.place(x=50, y=400, width=700)
 
-progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, style="TProgressbar")
-progress_bar.pack(fill=tk.X, pady=5)
+# MP3 파일 선택 버튼
+file_button = tk.Button(root, text="MP3 파일 선택", font=("Helvetica", 12), command=choose_file, height=2, width=15, bg='gray', fg='white')
+file_button.place(x=50, y=350)
 
-# 컨트롤 버튼 프레임
-control_frame = tk.Frame(main_frame, bg='#000000' if has_background else '#1e1e1e')
-control_frame.pack(pady=20)
+# 디렉터리 선택 버튼 추가
+dir_button = tk.Button(root, text="디렉터리 선택", font=("Helvetica", 12), command=choose_directory, height=2, width=15, bg='gray', fg='white')
+dir_button.place(x=250, y=350)  # 파일 선택 버튼 옆에 배치
 
-# 버튼 스타일 설정
-button_style = {
-    'font': ("Helvetica", 11, "bold"),
-    'height': 2,
-    'width': 12,
-    'relief': tk.FLAT,
-    'cursor': 'hand2'
-}
+# Play 버튼 추가
+play_button = tk.Button(root, text="Play", font=("Helvetica", 12), command=play_action, height=2, width=10, bg='green', fg='white')
+play_button.place(x=450, y=350)
 
-# 버튼들
-file_button = tk.Button(control_frame, text="🎵 파일 선택",
-                       command=choose_file, bg='#3a3a3a', fg='white',
-                       activebackground='#4a4a4a', **button_style)
-file_button.grid(row=0, column=0, padx=5, pady=5)
+# Stop 버튼 추가
+stop_button = tk.Button(root, text="Stop", font=("Helvetica", 12), command=stop_playback, height=2, width=10, bg='red', fg='white')
+stop_button.place(x=570, y=350)
 
-dir_button = tk.Button(control_frame, text="📁 폴더 선택",
-                      command=choose_directory, bg='#3a3a3a', fg='white',
-                      activebackground='#4a4a4a', **button_style)
-dir_button.grid(row=0, column=1, padx=5, pady=5)
-
-play_button = tk.Button(control_frame, text="▶ 재생",
-                       command=play_action, bg='#00a652', fg='white',
-                       activebackground='#00c652', **button_style)
-play_button.grid(row=0, column=2, padx=5, pady=5)
-
-stop_button = tk.Button(control_frame, text="■ 정지",
-                       command=stop_playback, bg='#dc3545', fg='white',
-                       activebackground='#fc3545', **button_style)
-stop_button.grid(row=0, column=3, padx=5, pady=5)
-
-# 로그 출력 프레임
-log_frame = tk.Frame(main_frame, bg='#2d2d2d')
-log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-if has_background:
-    log_frame.configure(bg='#000000', highlightbackground='#00ff00', highlightthickness=1)
-
-# 로그 타이틀
-log_title = tk.Label(log_frame, text="로그", font=("Helvetica", 12, "bold"),
-                    fg="#00ff00", bg='#000000' if has_background else '#2d2d2d')
-log_title.pack(anchor=tk.W, padx=10, pady=(10, 5))
-
-# 로그 텍스트 위젯과 스크롤바
-log_text_frame = tk.Frame(log_frame, bg='#000000' if has_background else '#2d2d2d')
-log_text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-
-log_scrollbar = tk.Scrollbar(log_text_frame)
-log_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-log_text = tk.Text(log_text_frame, height=8, bg='#0a0a0a', fg='#00ff00',
-                  font=("Consolas", 10), wrap=tk.WORD,
-                  yscrollcommand=log_scrollbar.set)
-log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-log_scrollbar.config(command=log_text.yview)
+# 로그 출력 (GUI 스타일)
+log_text = tk.Text(root, height=5, width=60, bg='black', fg='white', font=("Helvetica", 10))
+log_text.place(x=50, y=250)
 
 root.mainloop()
 
